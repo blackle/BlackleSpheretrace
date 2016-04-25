@@ -1,0 +1,11 @@
+*
+!*.*
+*.o
+*.bmp
+*.png
+*.gif
+*.out*
+*.ppm
+*.pbm
+.*
+!/.gitignore
