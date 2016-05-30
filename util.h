@@ -7,10 +7,27 @@
 
 double fmax(double a, double b, double c);
 double fmin(double a, double b, double c);
+double sign(double x);
 double mix(double a, double b, double k);
 double clamp(double k, double a, double b);
+double logit(double x);
 double poly_min( double a, double b, double k );
 double power_min( double a, double b, double k );
+double logit_min(double a, double b, double k);
+
+enum CoordinateIndex { 
+  _X_, 
+  _Y_, 
+  _Z_
+};
+
+struct EulerRotation {
+  EulerRotation( double x, double y, double z ) : 
+    x(x), y(y), z(z) {}
+  double x;
+  double y;
+  double z;
+};
 
 class Point {
 public:
@@ -19,8 +36,10 @@ public:
 
   Point& operator =(const Point& b);
 
-  double& operator[](int i);
-  double operator[](int i) const;
+  double& operator[](CoordinateIndex i);
+  double operator[](CoordinateIndex i) const;
+
+  Point rotate(const Point& origin, double angle, CoordinateIndex axis);
 
 private:
   double dat_p[3];
@@ -33,8 +52,8 @@ public:
 
   Vector& operator =(const Vector& w);
 
-  double& operator[](int i);
-  double operator[](int i) const;
+  double& operator[](CoordinateIndex i);
+  double operator[](CoordinateIndex i) const;
 
   double l2() const; //l_2 norm
   double l1() const; //l_1 norm
@@ -45,6 +64,8 @@ public:
   void normalize_linf(); // normalize wrt l_inf norm
 
   double dot(const Vector& w) const;
+  Vector rotate(double angle, CoordinateIndex axis);
+  Vector rotate(EulerRotation rot);
   Vector cross(const Vector& w) const;
 
 private:
@@ -92,10 +113,14 @@ Color operator *(double s, const Color& c);
 Color operator +(const Color& u, const Color& v); 
 std::ostream& operator <<(std::ostream& o, const Color& c); 
 
+
 struct Ray {
   Point origin;
   Vector dir;
   Point intsec;
+  bool intersected;
+  Vector gradient;
+  double mindist;
 };
 
 #endif

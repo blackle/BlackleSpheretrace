@@ -8,6 +8,10 @@ double fmin(double a, double b, double c){
   return fmin(a,fmin(b,c));
 }
 
+double sign(double x){
+  return (x > 0) - (x < 0);
+}
+
 double mix(double a, double b, double k){
   return a*(1-k) + b*k;
 }
@@ -18,16 +22,27 @@ double clamp(double k, double a, double b){
   return k;
 }
 
+double logit(double x){
+  return 1.0/(1+exp(-x));
+}
+
 // polynomial smooth min (k = 0.1);
 double poly_min( double a, double b, double k ){
-    double h = clamp( 0.5+0.5*(b-a)/k, 0.0, 1.0 );
-    return mix( b, a, h ) - k*h*(1.0-h);
+  double h = clamp( 0.5+0.5*(b-a)*k, 0.0, 1.0 );
+  return mix( b, a, h ) - h*(1.0-h)/k;
 }
 
 // power smooth min (k = 8);
 double power_min( double a, double b, double k ){
-    a = pow( a, k ); b = pow( b, k );
-    return pow( (a*b)/(a+b), 1.0/k );
+  double min = fmin(a,b);
+  a = a+1-min; b = b+1-min;
+  a = pow( 1.0/a, k ); b = pow( 1.0/b, k );
+  return 1.0/pow( a + b, 1.0/k ) - 1 + min;
+}
+
+double logit_min(double a, double b, double k){
+  double decbound = logit(k*(b-a));
+  return a*decbound + b*(1-decbound) - decbound*(1-decbound)/k;
 }
 
 Point::Point(double x, double y, double z){
@@ -48,12 +63,16 @@ Point& Point::operator =(const Point& b){
   dat_p[2] = b.dat_p[2];
 }
 
-double& Point::operator[](int i){
-  return dat_p[i];
+double& Point::operator[](CoordinateIndex i){
+  return dat_p[(int)i];
 }
 
-double Point::operator[](int i) const {
-  return dat_p[i];
+double Point::operator[](CoordinateIndex i) const {
+  return dat_p[(int)i];
+}
+
+Point Point::rotate(const Point& origin, double angle, CoordinateIndex axis){
+  return origin + (*this-origin).rotate(angle, axis);
 }
 
 Vector::Vector(double x, double y, double z){
@@ -74,12 +93,12 @@ Vector& Vector::operator =(const Vector& w){
   dat_v[2] = w.dat_v[2];
 }
 
-double& Vector::operator[](int i){
-  return dat_v[i];
+double& Vector::operator[](CoordinateIndex i){
+  return dat_v[(int)i];
 }
 
-double Vector::operator[](int i) const {
-  return dat_v[i];
+double Vector::operator[](CoordinateIndex i) const {
+  return dat_v[(int)i];
 }
 
 double Vector::l2() const {
@@ -127,44 +146,70 @@ double Vector::dot(const Vector& other) const {
     dat_v[2]*other.dat_v[2];
 }
 
+Vector Vector::rotate(double angle, CoordinateIndex axis){
+  double cosang = cos(angle * M_PI/180.0);
+  double sinang = sin(angle * M_PI/180.0);
+  if(axis == _X_){
+    return Vector(
+      dat_v[0],
+      cosang*dat_v[1] - sinang*dat_v[2],
+      sinang*dat_v[1] + cosang*dat_v[2]);
+  }
+  if(axis == _Y_){
+    return Vector(
+      cosang*dat_v[0] - sinang*dat_v[2],
+      dat_v[1],
+      sinang*dat_v[0] + cosang*dat_v[2]);
+  }
+  if(axis == _Z_){
+    return Vector(
+      cosang*dat_v[0] - sinang*dat_v[1],
+      sinang*dat_v[0] + cosang*dat_v[1],
+      dat_v[2]);
+  }
+}
+Vector Vector::rotate(EulerRotation rot){
+  return (*this).rotate(rot.x, _X_).rotate(rot.y, _Y_).rotate(rot.z, _Z_);
+}
+
 Vector Vector::cross(const Vector& other) const {
   return Vector(
-      dat_v[1]*other[2] - dat_v[2]*other[1],
-      dat_v[2]*other[0] - dat_v[0]*other[2],
-      dat_v[0]*other[1] - dat_v[1]*other[0]);
+      dat_v[1]*other[_Z_] - dat_v[2]*other[_Y_],
+      dat_v[2]*other[_X_] - dat_v[0]*other[_Z_],
+      dat_v[0]*other[_Y_] - dat_v[1]*other[_X_]);
 }
 
 
 Vector operator *(double s, const Vector& v){
-  return Vector(s*v[0], s*v[1], s*v[2]);
+  return Vector(s*v[_X_], s*v[_Y_], s*v[_Z_]);
 }
 
 Vector operator /(const Vector& v, double s){
-  return Vector(v[0]/s, v[1]/s, v[2]/s);
+  return Vector(v[_X_]/s, v[_Y_]/s, v[_Z_]/s);
 }
 
 Vector operator +(const Vector& u, const Vector& v){
-  return Vector(u[0]+v[0], u[1]+v[1], u[2]+v[2]);
+  return Vector(u[_X_]+v[_X_], u[_Y_]+v[_Y_], u[_Z_]+v[_Z_]);
 }
 
 Point operator +(const Point& u, const Vector& v){
-  return Point(u[0]+v[0], u[1]+v[1], u[2]+v[2]);
+  return Point(u[_X_]+v[_X_], u[_Y_]+v[_Y_], u[_Z_]+v[_Z_]);
 }
 
 Vector operator -(const Point& u, const Point& v){
-  return Vector(u[0]-v[0], u[1]-v[1], u[2]-v[2]);
+  return Vector(u[_X_]-v[_X_], u[_Y_]-v[_Y_], u[_Z_]-v[_Z_]);
 }
 
 Vector operator -(const Vector& u, const Vector& v){
-  return Vector(u[0]-v[0], u[1]-v[1], u[2]-v[2]);
+  return Vector(u[_X_]-v[_X_], u[_Y_]-v[_Y_], u[_Z_]-v[_Z_]);
 }
 
 Vector operator -(const Vector& u){
-  return Vector(-u[0], -u[1], -u[2]);
+  return Vector(-u[_X_], -u[_Y_], -u[_Z_]);
 }
 
 Point operator -(const Point& u, const Vector& v){
-  return Point(u[0]-v[0], u[1]-v[1], u[2]-v[2]);
+  return Point(u[_X_]-v[_X_], u[_Y_]-v[_Y_], u[_Z_]-v[_Z_]);
 }
 
 Vector cross(const Vector& u, const Vector& v)  {
@@ -172,11 +217,11 @@ Vector cross(const Vector& u, const Vector& v)  {
 }
 
 std::ostream& operator <<(std::ostream& s, const Point& p){
-  return s << "Point(" << p[0] << "," << p[1] << "," << p[2] << ")";
+  return s << "Point(" << p[_X_] << "," << p[_Y_] << "," << p[_Z_] << ")";
 }
 
 std::ostream& operator <<(std::ostream& s, const Vector& v){
-  return s << "Vector(" << v[0] << "," << v[1] << "," << v[2] << ")";
+  return s << "Vector(" << v[_X_] << "," << v[_Y_] << "," << v[_Z_] << ")";
 }
 
 
