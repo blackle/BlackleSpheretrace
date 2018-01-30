@@ -5,7 +5,7 @@ public:
   Bitmap(int width, int height);
   ~Bitmap();
 
-  Color& operator()(int i, int j);  
+  Color& operator()(int i, int j);
   Color operator()(int i, int j) const;
 
   int width() const {return _width;}

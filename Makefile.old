@@ -1,0 +1,14 @@
+CC = g++
+CFLAGS = -g -O3  
+LIBS = -lm
+OBJS = util.o bitmap.o isocomp.o
+
+util_test : util_test.o $(OBJS) Makefile
+	$(CC) $(CFLAGS) -o $@ $< $(OBJS) $(LIBS)
+
+%.o : %.cpp %.h Makefile
+	$(CC) $(CFLAGS) -c $*.cpp
+
+clean :
+	rm util_test
+	rm $(OBJS)
