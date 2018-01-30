@@ -1,5 +1,9 @@
-#include "util.h"
-#include "bitmap.h"
+#include <util/Math.h>
+#include <model/Vector.h>
+#include <model/Point.h>
+#include <model/Color.h>
+#include <model/Bitmap.h>
+#include <model/Ray.h>
 #include <iostream>
 #include <iomanip>
 #include <vector>

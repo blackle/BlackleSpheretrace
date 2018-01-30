@@ -1,4 +1,5 @@
-#include "util.h"
+#include <model/Point.h>
+#include <model/Vector.h>
 
 enum IsoCompType { 
   PRIMITIVE, 

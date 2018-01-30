@@ -1,4 +1,4 @@
-#include "bitmap.h"
+#include "Bitmap.h"
 
 Bitmap::Bitmap(int width, int height){
   _width = width; _height = height;
